@@ -2,7 +2,7 @@ import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
 from folium.plugins import HeatMap
-carte = folium.Map(location=[49.44, 1.10], zoom_start=10, tiles="OpenStreetMap")
+carte = folium.Map(location=[49.44, 1.10], zoom_start=10, tiles="OpenStreetMap", control_scale=True)
 
 # Un cluster par opérateur : chaque cluster est aussi une couche dans le menu
 cluster_orange = MarkerCluster(name="Orange").add_to(carte)   # name = texte affiché dans le menu
@@ -38,6 +38,8 @@ HeatMap(points, radius=15).add_to(carte)
 #         location=[ligne["latitude"], ligne["longitude"]],
 #         radius=5, fill=True, popup=ligne["operateur"],
 #     ).add_to(clusters[ligne["operateur"]])
+
+
 
 folium.LayerControl().add_to(carte)   # le menu à cocher, toujours en dernier
 
