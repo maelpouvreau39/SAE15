@@ -28,7 +28,6 @@ folium.CircleMarker(
 ).add_to(cluster_free)
 
 points = [[49.44, 1.10], [49.45, 1.08], [49.43, 1.09]]
-HeatMap(points, radius=15).add_to(carte)
 
 # plus tard pour pandas :
 # df = pd.read_csv("antennes.csv")
