@@ -1,0 +1,5 @@
+data/
+ref/
+__pycache__/
+
+# fichier a jamais push sur github

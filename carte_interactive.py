@@ -1,8 +1,11 @@
+# fichier brouillon a supprimer plus tard
+
+
 import pandas as pd
 import folium
 from folium.plugins import MarkerCluster
 from folium.plugins import HeatMap
-carte = folium.Map(location=[49.44, 1.10], zoom_start=10, tiles="OpenStreetMap")
+carte = folium.Map(location=[49.44, 1.10], zoom_start=10, tiles="OpenStreetMap", control_scale=True)
 
 # Un cluster par opérateur : chaque cluster est aussi une couche dans le menu
 cluster_orange = MarkerCluster(name="Orange").add_to(carte)   # name = texte affiché dans le menu
@@ -28,7 +31,6 @@ folium.CircleMarker(
 ).add_to(cluster_free)
 
 points = [[49.44, 1.10], [49.45, 1.08], [49.43, 1.09]]
-HeatMap(points, radius=15).add_to(carte)
 
 # plus tard pour pandas :
 # df = pd.read_csv("antennes.csv")
@@ -38,6 +40,8 @@ HeatMap(points, radius=15).add_to(carte)
 #         location=[ligne["latitude"], ligne["longitude"]],
 #         radius=5, fill=True, popup=ligne["operateur"],
 #     ).add_to(clusters[ligne["operateur"]])
+
+
 
 folium.LayerControl().add_to(carte)   # le menu à cocher, toujours en dernier
 
