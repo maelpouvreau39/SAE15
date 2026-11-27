@@ -5,6 +5,10 @@ Place the supplied data folders next to sae15_anfr.py so that the code can retri
 
 When the code is launched, the remote control takes around 19–20 seconds to start up
 
+docstrings are placed under each function so it is more understandable by others person and so the code can be documented easily
+
+I don't recommend the usage of the heatmap filter due to it not being enough precise
+
 How does the code work?
 When you run the code, a Tkinter window appears, this is the filter selection interface Simply select the filters you want, then click ‘Generate Map’, and a world map displaying the entire database will appear, but only according to your predefined filters.
 

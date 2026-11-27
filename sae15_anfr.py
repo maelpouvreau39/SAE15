@@ -1,3 +1,9 @@
+"""
+SAE 15 Mais que fait l'ANFR ?
+Interactive map of the ANFR radio installations, with a Tkinter window to choose the filters
+Put the data and ref folders given by the teacher next to this file, then run it
+"""
+
 import importlib
 import subprocess
 import sys
@@ -23,7 +29,7 @@ from folium.plugins import FastMarkerCluster, HeatMap
 PROJECT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = PROJECT_DIR / "resultats"
 
-MAX_POINTS = 150000
+MAX_POINTS = 150000 # maximum number of displayed points to avoid lag
 MOBILE_OPERATORS = ["ORANGE", "SFR", "BOUYGUES TELECOM", "FREE MOBILE"]
 OPERATOR_COLORS = {"ORANGE": "#f47230", "SFR": "#ec4647", "BOUYGUES TELECOM": "#257de0",
                    "FREE MOBILE": "#6a4ce2"}
@@ -39,10 +45,10 @@ FAMILIES = [
     ("FH", "Faisceau hertzien"), ("PMR", "PMR (radio pro)"), ("TETRA", "PMR (radio pro)"),
     ("SAT", "Satellite"), ("BLR", "Boucle locale radio"),
 ]
-# dico des familles de technologies
+# Emitter label prefix => technology family
 TECH_CHOICES = ["Toutes", "2G", "3G", "4G", "5G", "Radio FM", "TNT", "Faisceau hertzien",
                 "GSM-R (rail)", "PMR (radio pro)"]
-# dico des techologies dispo pour les support 
+# Technologies the user can choose in the window
 REGIONS = {
     "Auvergne-Rhône-Alpes": "01 03 07 15 26 38 42 43 63 69 73 74",
     "Bourgogne-Franche-Comté": "21 25 39 58 70 71 89 90",
@@ -58,11 +64,13 @@ REGIONS = {
     "Pays de la Loire": "44 49 53 72 85",
     "Provence-Alpes-Côte d'Azur": "04 05 06 13 83 84",
 }
-# dico des donnée pour relier département a région
+# Departments of each region (used to find the region from the postcode)
 DEP_TO_REGION = {dep: region for region, deps in REGIONS.items() for dep in deps.split()}
 
 
 def find_file(name):
+    """Search the script folder (then its parent in case of) for a data file, also inside zip files if not extracted
+    Return (path, None) for a normal file or (zip_path, member) for a file inside a zip"""
     for folder in (PROJECT_DIR, PROJECT_DIR.parent):
         for path in folder.rglob("*"):
             if "__MACOSX" in path.parts:
@@ -78,6 +86,8 @@ def find_file(name):
 
 
 def read(name, columns=None):
+    """Read one ';'-separated ANFR file into a DataFrame, everything as text
+    keeps the leading zeros of the IDs, helped by AI because the files were hard to reach to"""
     path, member = find_file(name)
     if member is None:
         return pd.read_csv(path, sep=";", dtype=str, usecols=columns)
@@ -86,6 +96,7 @@ def read(name, columns=None):
 
 
 def family(system):
+    """Return the technology family of an emitter label ex:'LTE 800' -> '4G'."""
     for prefix, fam in FAMILIES:
         if system.startswith(prefix):
             return fam
@@ -93,6 +104,8 @@ def family(system):
 
 
 def dms_to_decimal(df, prefix, direction_col, negative_letter):
+    """Convert degrees / minutes / seconds columns into decimal degrees
+    negative for South or West and so it's more understandable by users"""
     value = (df[f"COR_NB_DG_{prefix}"].astype(float)
              + df[f"COR_NB_MN_{prefix}"].astype(float) / 60
              + df[f"COR_NB_SC_{prefix}"].astype(float) / 3600)
@@ -100,10 +113,12 @@ def dms_to_decimal(df, prefix, direction_col, negative_letter):
 
 
 def year_of(dates):
+    """Extract the year as a number from dd/mm/yyyy dates"""
     return pd.to_numeric(dates.str[-4:], errors="coerce")
 
 
 def load_data():
+    """Load the ANFR files once, clean them and join them into a main table"""
     support = read("sup_support.txt", ["SUP_ID", "STA_NM_ANFR", "NAT_ID", "COR_NB_DG_LAT", "COR_NB_MN_LAT",
                                        "COR_NB_SC_LAT", "COR_CD_NS_LAT", "COR_NB_DG_LON", "COR_NB_MN_LON",
                                        "COR_NB_SC_LON", "COR_CD_EW_LON", "SUP_NM_HAUT", "TPO_ID",
@@ -143,6 +158,8 @@ def load_data():
 
 
 def apply_filters(data, zone, operators, techno, year_max):
+    """Return the rows of the main table above that match the zone, operators,
+    technology and year chosen by the user in big, the filters chosen"""
     base = data["base"]
     mask = pd.Series(True, index=base.index)
 
@@ -164,6 +181,8 @@ def apply_filters(data, zone, operators, techno, year_max):
 
 
 def build_map(rows, zone, show_heat, show_deps, show_points):
+    """Build the folium map from the filtered rows and save it in carte.html
+    Return the path of the file and a message for the user for it to be understandable"""
     folium_map = folium.Map(location=[46.6, 2.4], zoom_start=6, tiles=None,
                             control_scale=True, prefer_canvas=True)
     folium.TileLayer(tiles=IGN_URL, attr="IGN-F / Géoplateforme", name="Plan IGN", max_zoom=19).add_to(folium_map)
@@ -239,7 +258,9 @@ def build_map(rows, zone, show_heat, show_deps, show_points):
 
 class RemoteControl(tk.Tk):
 
+    """Tkinter window used as a remote control to choose the filters and generate the map."""
     def __init__(self):
+        """Create the window and start loading the data."""
         super().__init__()
         self.title("SAE 15 - carte ANFR")
         self.status = tk.Label(self, text="Chargement des données...")
@@ -247,6 +268,7 @@ class RemoteControl(tk.Tk):
         self.after(200, self.load)
 
     def load(self):
+        """Load the data, then build the widgets shows an error if the files are missing"""
         try:
             self.data = load_data()
         except FileNotFoundError as error:
@@ -258,6 +280,7 @@ class RemoteControl(tk.Tk):
         self.update_counter()
 
     def build_widgets(self):
+        """Create the filter widgets: zone, operators, technology, year, layers and button."""
         base = self.data["base"]
 
         tk.Label(self, text="Zone :").pack(anchor="w")
@@ -304,21 +327,26 @@ class RemoteControl(tk.Tk):
         self.message.pack(anchor="w")
 
     def selected_zone(self):
+        """Return the zone selected in the list France entière by default"""
         selection = self.zone_list.curselection()
         return self.zones[selection[0]] if selection else "France entière"
 
     def selected_operators(self):
+        """Return the names of the selected operators."""
         return [self.operator_names[i] for i in self.operator_list.curselection()]
 
     def current_rows(self):
+        """Return the data matching the current filters."""
         return apply_filters(self.data, self.selected_zone(), self.selected_operators(),
                              self.techno.get(), self.year.get())
 
     def update_counter(self):
+        """Update the number of supports matching the filters."""
         rows = self.current_rows()
         self.counter.config(text=f"{rows['SUP_ID'].nunique()} supports")
 
     def open_map(self):
+        """Generate the map with the current filters and open it in the browser."""
         rows = self.current_rows()
         if rows.empty:
             self.message.config(text="Aucun support avec ces filtres.")
