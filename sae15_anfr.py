@@ -157,10 +157,12 @@ def load_data():
     return {"base": base, "station": station, "station_tech": station_tech}
 
 
-def apply_filters(data, zone, operators, techno, year_max):
+def apply_filters(data, zone, operators, techno, year_max, sup_id=""):
     """Return the rows of the main table above that match the zone, operators,
     technology and year chosen by the user in big, the filters chosen"""
     base = data["base"]
+    if sup_id.strip():
+        return base[base["SUP_ID"] == sup_id.strip()]
     mask = pd.Series(True, index=base.index)
 
     if zone.startswith("Région : "):
@@ -313,6 +315,11 @@ class RemoteControl(tk.Tk):
         tk.Scale(self, from_=1995, to=2026, orient="horizontal", variable=self.year,
                  command=lambda v: self.update_counter()).pack(fill="x")
 
+        tk.Label(self, text="SUP_ID (optionnel) :").pack(anchor="w")
+        self.sup_id = tk.Entry(self)
+        self.sup_id.pack(fill="x")
+        self.sup_id.bind("<KeyRelease>", lambda e: self.update_counter())
+
         self.show_heat = tk.BooleanVar(value=False)
         self.show_deps = tk.BooleanVar(value=True)
         self.show_points = tk.BooleanVar(value=True)
@@ -338,7 +345,7 @@ class RemoteControl(tk.Tk):
     def current_rows(self):
         """Return the data matching the current filters."""
         return apply_filters(self.data, self.selected_zone(), self.selected_operators(),
-                             self.techno.get(), self.year.get())
+                             self.techno.get(), self.year.get(), self.sup_id.get())
 
     def update_counter(self):
         """Update the number of supports matching the filters."""
@@ -353,7 +360,8 @@ class RemoteControl(tk.Tk):
             return
         self.message.config(text="Génération...")
         self.update_idletasks()
-        path, text = build_map(rows, self.selected_zone(), self.show_heat.get(),
+        zone = "SUP_ID" if self.sup_id.get().strip() else self.selected_zone()
+        path, text = build_map(rows, zone, self.show_heat.get(),
                                self.show_deps.get(), self.show_points.get())
         webbrowser.open(path.resolve().as_uri())
         self.message.config(text=text)
