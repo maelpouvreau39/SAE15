@@ -5,15 +5,17 @@ Put the data and ref folders given by the teacher next to this file, then run it
 """
 
 import importlib
-import subprocess
 import sys
 
+missing = []
 for module in ("pandas", "folium"):
     try:
         importlib.import_module(module)
     except ImportError:
-        print(f"Installing {module}...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module])
+        missing.append(module)
+if missing:
+    print("Missing module(s):", ", ".join(missing), "- see requirements.txt to know what to install")
+    sys.exit(1)
 
 import html
 import webbrowser
