@@ -1,2 +1,4 @@
 pandas
 folium
+removeprefix dans apply_filters a besoin de Python 3.9 minimum
+internet pour télécharger la carte de fond 
