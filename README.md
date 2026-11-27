@@ -14,5 +14,5 @@ Step-by-step instructions:
 2) Wait for the data to load
 3) Choose your filters in the Tkinter window that has opened
 4) Click ‘Generate map’
-5) Open the map.html file
+5) Open the map.html file 
 6) Explore the map using your settings!
